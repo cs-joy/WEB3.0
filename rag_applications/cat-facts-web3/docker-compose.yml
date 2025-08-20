@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - WEB3_PROVIDER_URL=http://blockchain:8545
+      - IPFS_API_URL=/dns/ipfs/tcp/5001/http
+    depends_on:
+      - ipfs
+      - blockchain
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  ipfs:
+    image: ipfs/go-ipfs:v0.19.0
+    ports:
+      - "4001:4001" # IPFS peer-to-peer
+      - "5001:5001" # API
+      - "8080:8080" # Gateway
+
+  blockchain:
+    image: trufflesuite/ganache:latest
+    ports:
+      - "8545:8545"
+    command:
+      - "--wallet.seed=cat_facts_web3_seed"
+      - "--miner.blockTime=2"
