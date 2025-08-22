@@ -21,7 +21,9 @@ with open(os.path.join(contracts_path, 'chatHistory-address.json')) as f:
 with open(os.path.join(contracts_path, 'ChatHistory.json')) as f:
     contract_abi = json.load(f)['abi']
 
-chat_contract = web3.eth.contract(address=contract_address, abi=contract_abi)
+# Convert to checksum address
+contract_address_checksum = web3.to_checksum_address(contract_address)
+chat_contract = web3.eth.contract(address=contract_address_checksum, abi=contract_abi)
 
 # Initialize RAG components
 EMBEDDING_MODEL = 'hf.co/CompendiumLabs/bge-base-en-v1.5-gguf'
@@ -99,10 +101,10 @@ Use only the following pieces of context to answer the question. Don't make up a
         query=query,
         response=chatbot_response
     )
-    
+
     # Store on blockchain
     try:
-        account = web3.eth.accounts[0]  # Using first account for demo
+        account = web3.eth.accounts[8]  # Using third account from Ganache
         nonce = web3.eth.get_transaction_count(account)
         
         tx = chat_contract.functions.addChat(query, chatbot_response).build_transaction({
@@ -112,9 +114,13 @@ Use only the following pieces of context to answer the question. Don't make up a
             'nonce': nonce,
         })
         
-        private_key = "0x..."  # Replace with your private key from Ganache
+        private_key = "0x829e924fdf021ba3dbbc4225edfece9aca04b929d6e75613329ca6f1d31c0bb4" # from ganache-cli
+        
+        # Sign the transaction - use the correct attribute name
         signed_tx = web3.eth.account.sign_transaction(tx, private_key)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        
+        # Use raw_transaction instead of rawTransaction
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
         
         # Wait for transaction receipt
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -122,9 +128,14 @@ Use only the following pieces of context to answer the question. Don't make up a
         chat_entry.tx_hash = receipt.transactionHash.hex()
         chat_entry.save()
         
+        print(f"Transaction successful: {receipt.transactionHash.hex()}")
+        
     except Exception as e:
         print(f"Error storing on blockchain: {e}")
+        # You can choose to still return the response even if blockchain storage fails
+        # The chat is already stored in the database
     
+    # Always return a response - this was missing in your code
     serializer = ChatHistorySerializer(chat_entry)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -158,3 +169,4 @@ def get_blockchain_history(request, user_address):
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

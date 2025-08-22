@@ -25,6 +25,9 @@ load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
+GANACHE_PRIVATE_KEY = os.getenv('GANACHE_PRIVATE_KEY')
+GANACHE_URL = os.getenv('GANACHE_URL')
+
 if not SECRET_KEY:
     raise ValueError("No SECRET_KEY set for Django application")
 
