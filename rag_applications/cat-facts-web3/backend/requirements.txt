@@ -4,4 +4,4 @@ web3==6.4.0
 python-dotenv==1.0.0
 ipfshttpclient==0.8.0a2
 ollama==0.1.4
-pydantic==1.10.7
+pydantic==1.10.13
